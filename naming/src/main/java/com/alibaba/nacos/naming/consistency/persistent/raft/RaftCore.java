@@ -111,7 +111,7 @@ public class RaftCore implements Closeable {
     
     private volatile ConcurrentMap<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
     
-    /** Meta- 注册的服务或者实例的缓存Map */
+    /** Meta- 注册的服务或者实例的缓存Map  */
     private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<>();
     
     private RaftPeerSet peers;
