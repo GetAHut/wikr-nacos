@@ -87,10 +87,10 @@ import java.util.zip.GZIPOutputStream;
 @Component
 public class RaftCore implements Closeable {
 
-    /** Meta- 投票URL拼接 */
+    /* Meta- 投票URL拼接 */
     public static final String API_VOTE = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/vote";
 
-    /** Meta- 心跳URL拼接 */
+    /* Meta- 心跳URL拼接 */
     public static final String API_BEAT = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/beat";
     
     public static final String API_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum";
@@ -111,7 +111,7 @@ public class RaftCore implements Closeable {
     
     private volatile ConcurrentMap<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
     
-    /** Meta- 注册的服务或者实例的缓存Map  */
+    /* Meta- 注册的服务或者实例的缓存Map  */
     private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<>();
     
     private RaftPeerSet peers;
@@ -132,7 +132,7 @@ public class RaftCore implements Closeable {
     
     private final RaftListener raftListener;
 
-    /** Meta- 初始化标识 */
+    /* Meta- 初始化标识 */
     private boolean initialized = false;
     
     private volatile boolean stopWork = false;
