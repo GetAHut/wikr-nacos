@@ -101,7 +101,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         }
         return Optional.ofNullable(errorMsg);
     }
-    
+
+    // Meta- 临时实例 持久化实例判断
+    // Meta- 其实就是 AP 和CP 结构的选择  AP 使用Distro协议 CP使用Raft协议
     private ConsistencyService mapConsistencyService(String key) {
         return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }

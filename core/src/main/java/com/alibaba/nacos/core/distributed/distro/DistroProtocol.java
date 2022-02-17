@@ -112,6 +112,7 @@ public class DistroProtocol {
      * @param delay     delay time for sync
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
+        // Meta- 给除自己所有的AP架构成员 （实例） 延迟同步任务
         for (Member each : memberManager.allMembersWithoutSelf()) {
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }

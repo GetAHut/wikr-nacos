@@ -81,6 +81,7 @@ public class ServiceManager implements RecordListener<Service> {
     /**
      * Map(namespace, Map(group::serviceName, Service)).
      */
+    // Meta- nacos中 service存储数据结构
     private final Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
     
     private final LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
@@ -445,6 +446,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster)
             throws NacosException {
+        // Meta- 先从serviceMap中获取
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
             
@@ -462,6 +464,7 @@ public class ServiceManager implements RecordListener<Service> {
             }
             service.validate();
             
+            // Meta- 注册新服务实例 并创建心跳检查任务
             putServiceAndInit(service);
             if (!local) {
                 addOrReplaceService(service);
@@ -480,13 +483,17 @@ public class ServiceManager implements RecordListener<Service> {
      * @throws Exception any error occurred in the process
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-        
+
+        // Meta- 创建新注册实例 储存进内存注册表serviceMap 并开启心跳检查任务
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
-        
+
+        // Meta- 内存注册表中获取service
         Service service = getService(namespaceId, serviceName);
-        
+
+        // Meta- 检查service是否为空  为空抛出异常
         checkServiceIsNull(service, namespaceId, serviceName);
-        
+
+        // Meta- 将新注册实例 Instance 加入到服务 service 中
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
     
@@ -630,17 +637,29 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void addInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips)
             throws NacosException {
-        
+
+        // Meta- 服务名： com.alibaba.nacos.naming.iplist.ephemeral. "${namespaceId}"##"${serviceName}"
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
-        
+
+        // Meta- 从内存注册表获取 service
         Service service = getService(namespaceId, serviceName);
         
         synchronized (service) {
+            // Meta- 拿到所有服务实例
             List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
             
             Instances instances = new Instances();
+            // Meta- 实例列表封装
             instances.setInstanceList(instanceList);
-            
+
+            // Meta- 将service对应的全量服务实例instances写入内存注册表
+            // Meta- wikr-@see DelegateConsistencyServiceImpl#put
+            // Meta- wikr-@see DelegateConsistencyServiceImpl#mapConsistencyService
+            // Meta- 判断是临时实例 还是持久化实例 KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
+            // Meta- ephemeralConsistencyService 临时实例， 是通过阿里自己实现的distro协议实现AP架构模式（最终一致性协议）
+            // Meta- wikr-@see DistroConsistencyServiceImpl#put
+            // Meta- persistentConsistencyService 持久化实例， 是通过raft协议实现的CP结构模式（ZAB 一致性协议）
+            // Meta- wikr-@see
             consistencyService.put(key, instances);
         }
     }
@@ -857,16 +876,22 @@ public class ServiceManager implements RecordListener<Service> {
      * @param service service
      */
     public void putService(Service service) {
+        // Meta- namespaceId存在 则取出
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             serviceMap.putIfAbsent(service.getNamespaceId(), new ConcurrentSkipListMap<>());
         }
+        // Meta- serviceMap -> Map(namespace, Map(group::serviceName, Service)).
         serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
+        // Meta- 创建内存注册表结构
         putService(service);
+        System.out.println("serviceMap -> " + serviceMap);
         service = getService(service.getNamespaceId(), service.getName());
+        // Meta- 初始化新注册的服务实例 并创建心跳检查任务
         service.init();
+        // Meta- 服务监听
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService

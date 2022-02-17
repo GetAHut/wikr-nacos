@@ -289,6 +289,8 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
      * @param service service
      */
     public void serviceChanged(Service service) {
+        // Meta- 发布事件
+        // Meta- 通过UDP的方式将变动通知发布给订阅的客户端
         this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
     }
     

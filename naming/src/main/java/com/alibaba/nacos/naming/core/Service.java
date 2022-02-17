@@ -193,7 +193,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 instance.setWeight(0.01D);
             }
         }
-        
+
+        // Meta- 将注册实例信息更新到注册表内存结构中
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
         
         recalculateChecksum();
@@ -228,6 +229,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
     
     /**
+     * Meta- 将注册实例列表更新到注册表内存结构中
      * Update instances.
      *
      * @param instances instances
@@ -274,10 +276,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
             //make every ip mine
             List<Instance> entryIPs = entry.getValue();
+            // Meta- 更新服务列表
             clusterMap.get(entry.getKey()).updateIps(entryIPs, ephemeral);
         }
         
         setLastModifiedMillis(System.currentTimeMillis());
+        // Meta- 发布服务change事件
+        // Meta- 通过UDP的方法将实例变动通知发给客户端
+        // Meta- Nacos这种推送模式对于Zookeeper使用的TCP长链接来保持通信会节省很多资源。
+        //  nacos中如果客户端收到了UDP消息包，会返回一个ACK，如果nacos-server端长时间未收到ACK，会重发
+        //  使用UDP的方式是不一定能保证所有客户端都能接受到UDP消息。但是Nacos以轮询的方案做兜底。
+        //  这样能保证实时性，也能保证数据最终一致性。
         getPushService().serviceChanged(this);
         ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteToV2(this, ephemeral);
         StringBuilder stringBuilder = new StringBuilder();
@@ -295,6 +304,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * Init service.
      */
     public void init() {
+        // Meta- 创建心跳检查延时任务
+        // Meta- clientBeatCheckTask -> Runnable
+        // Meta- wikr-@see ClientBeatCheckTask#run
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().setService(this);
@@ -409,6 +421,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         int ipCount = 0;
         for (Instance ip : ips) {
             if (!ip.isHealthy()) {
+                // Meta- 统计非健康实例
                 invalidIpCount++;
             }
             
@@ -543,6 +556,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * Re-calculate checksum of service.
      */
     public synchronized void recalculateChecksum() {
+        // Meta- 获取所有实例IP
         List<Instance> ips = allIPs();
         
         StringBuilder ipsString = new StringBuilder();

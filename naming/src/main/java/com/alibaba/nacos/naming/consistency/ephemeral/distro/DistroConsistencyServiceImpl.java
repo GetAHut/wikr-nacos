@@ -108,11 +108,14 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public void put(String key, Record value) throws NacosException {
+        // Meta- 实例存储
+        // Meta- 注册 Data.CHANGE 事件
         onPut(key, value);
         // If upgrade to 2.0.X, do not sync for v1.
         if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
             return;
         }
+        // Meta-
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
                 DistroConfig.getInstance().getSyncDelayMillis());
     }
@@ -135,19 +138,24 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
      * @param value record
      */
     public void onPut(String key, Record value) {
-        
+
+        // Meta- 判断是否是临时实例
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
             Datum<Instances> datum = new Datum<>();
             datum.value = (Instances) value;
             datum.key = key;
             datum.timestamp.incrementAndGet();
+            // Meta- 临时实例存储
             dataStore.put(key, datum);
         }
         
         if (!listeners.containsKey(key)) {
             return;
         }
-        
+
+        // Meta- 注册data change 任务
+        // Meta- notifier -> Runnable
+        // Meta- 想队列添加任务
         notifier.addTask(key, DataOperation.CHANGE);
     }
     
@@ -396,6 +404,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             if (action == DataOperation.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
+            // Meta- Pair -> 键值对配对类
+            // Meta- 向队列注册。
             tasks.offer(Pair.with(datumKey, action));
         }
         
@@ -409,7 +419,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             
             for (; ; ) {
                 try {
+                    // Meta- 阻塞 从队列中获取任务 处理
                     Pair<String, DataOperation> pair = tasks.take();
+                    // Meta- 处理
                     handle(pair);
                 } catch (Throwable e) {
                     Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
@@ -435,6 +447,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     count++;
                     
                     try {
+                        // Meta- listener 就是每一个服务实例
                         if (action == DataOperation.CHANGE) {
                             listener.onChange(datumKey, dataStore.get(datumKey).value);
                             continue;
