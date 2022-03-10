@@ -61,6 +61,7 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         }
         Loggers.DISTRO.info("[DISTRO-START] {}", toString());
         if (transportAgent.supportCallbackTransport()) {
+            // Meta- 通过grpc 同步数据
             doExecuteWithCallback(new DistroExecuteCallback());
         } else {
             executeDistroTask();
@@ -71,6 +72,7 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         try {
             boolean result = doExecute();
             if (!result) {
+                // Meta- 重试
                 handleFailedTask();
             }
             Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);

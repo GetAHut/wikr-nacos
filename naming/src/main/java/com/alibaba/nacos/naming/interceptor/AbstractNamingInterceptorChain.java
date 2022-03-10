@@ -64,6 +64,7 @@ public abstract class AbstractNamingInterceptorChain<T extends Interceptable>
                 return;
             }
         }
+        // Meta- 调用
         object.passIntercept();
     }
 }

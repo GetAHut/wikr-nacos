@@ -57,6 +57,8 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
         this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
         this.closed = new AtomicBoolean(false);
         this.log = null == logger ? LoggerFactory.getLogger(TaskExecuteWorker.class) : logger;
+        // Meta- 在初始化任务执行时 初始化 InnerWorker ---> @see InnerWorker.run()
+        // Meta- 在TaskExecuteWorker中存放任务进入queue， 在InnerWorker.run()中 take() 取出任务执行。
         new InnerWorker(name).start();
     }
     
@@ -74,6 +76,7 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     
     private void putTask(Runnable task) {
         try {
+            // Meta- 将任务存放阻塞队列
             queue.put(task);
         } catch (InterruptedException ire) {
             log.error(ire.toString(), ire);
@@ -111,6 +114,8 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
         public void run() {
             while (!closed.get()) {
                 try {
+                    // Meta- 处理在TaskExecutorWorker中添加进队列的任务
+                    // Meta- wikr-@see 任务 DistroSyncChangeTask
                     Runnable task = queue.take();
                     long begin = System.currentTimeMillis();
                     task.run();

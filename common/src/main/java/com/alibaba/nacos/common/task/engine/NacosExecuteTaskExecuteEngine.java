@@ -66,7 +66,9 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
             processor.process(task);
             return;
         }
+        // Meta- 获取任务执行者
         TaskExecuteWorker worker = getWorker(tag);
+        // Meta- 将任务存放阻塞队列
         worker.process(task);
     }
     

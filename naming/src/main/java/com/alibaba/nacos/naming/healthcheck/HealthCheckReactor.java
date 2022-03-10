@@ -66,9 +66,11 @@ public class HealthCheckReactor {
      */
     public static void scheduleCheck(BeatCheckTask task) {
         Runnable wrapperTask =
+                // Meta- 2.0.X版本， task升级为 ClientBeatCheckTaskV2.run()
                 task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
                         : task;
         futureMap.computeIfAbsent(task.taskKey(),
+                // Meta- 延迟5秒，每5秒执行一次。
                 k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
     }
     

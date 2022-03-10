@@ -80,6 +80,11 @@ public class ServiceManager implements RecordListener<Service> {
     
     /**
      * Map(namespace, Map(group::serviceName, Service)).
+     *     
+     *  serviceMap: Map<String, Map<String, Service>>
+     *      Service: Map<String, Cluster> clusterMap
+     *          Cluster: Set<Instance> ephemeralInstances
+     *
      */
     // Meta- nacos中 service存储数据结构
     private final Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
@@ -446,7 +451,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster)
             throws NacosException {
-        // Meta- 先从serviceMap中获取
+        // Meta- 先从serviceMap(注册表)中获取
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
             
@@ -640,6 +645,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         // Meta- 服务名： com.alibaba.nacos.naming.iplist.ephemeral. "${namespaceId}"##"${serviceName}"
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
+        System.out.println("wikr ->  instance key builder : " + key);
 
         // Meta- 从内存注册表获取 service
         Service service = getService(namespaceId, serviceName);
@@ -652,6 +658,7 @@ public class ServiceManager implements RecordListener<Service> {
             // Meta- 实例列表封装
             instances.setInstanceList(instanceList);
 
+            // Meta- wikr-see @Resource(name = "consistencyDelegate")
             // Meta- 将service对应的全量服务实例instances写入内存注册表
             // Meta- wikr-@see DelegateConsistencyServiceImpl#put
             // Meta- wikr-@see DelegateConsistencyServiceImpl#mapConsistencyService
@@ -885,7 +892,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
-        // Meta- 创建内存注册表结构
+        // Meta- 创建内存注册表结构（暂时还是空的）
         putService(service);
         System.out.println("serviceMap -> " + serviceMap);
         service = getService(service.getNamespaceId(), service.getName());

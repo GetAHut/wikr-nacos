@@ -64,6 +64,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private Set<Instance> persistentInstances = new HashSet<>();
     
     @JsonIgnore
+    /** 存放Instance的集合 是注册表 serviceMap的一部分
+     *  serviceMap: Map<String, Map<String, Service>>
+     *      Service: Map<String, Cluster> clusterMap
+     *          Cluster: Set<Instance> ephemeralInstances
+     */
     private Set<Instance> ephemeralInstances = new HashSet<>();
     
     @JsonIgnore
@@ -238,9 +243,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     public void updateIps(List<Instance> ips, boolean ephemeral) {
 
         // Meta- 判断更新的实例是临时实例 还是持久化实例
+        // Meta- copy on write 写时复制机制
         Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
 
-        // Meta- old
+        // Meta- old 副本 对 old副本操作， 读写分离！
         HashMap<String, Instance> oldIpMap = new HashMap<>(toUpdateInstances.size());
         
         for (Instance ip : toUpdateInstances) {
@@ -298,6 +304,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         toUpdateInstances = new HashSet<>(ips);
         
         if (ephemeral) {
+            // Meta- AP架构实例存放的数据结构
+            // Meta- Set<Instance>
+            // Meta- 写回注册表
             ephemeralInstances = toUpdateInstances;
         } else {
             persistentInstances = toUpdateInstances;

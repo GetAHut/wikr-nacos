@@ -184,7 +184,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 // Reject this abnormal instance list:
                 throw new RuntimeException("got null instance " + key);
             }
-            
+
+            // Meta- 权重
             if (instance.getWeight() > 10000.0D) {
                 instance.setWeight(10000.0D);
             }

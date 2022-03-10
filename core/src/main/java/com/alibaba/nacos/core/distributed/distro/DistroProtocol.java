@@ -113,6 +113,7 @@ public class DistroProtocol {
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
         // Meta- 给除自己所有的AP架构成员 （实例） 延迟同步任务
+        // Meta- 单机则不执行
         for (Member each : memberManager.allMembersWithoutSelf()) {
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }
@@ -129,7 +130,12 @@ public class DistroProtocol {
     public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
         DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                 targetServer);
+        // Meta- Distro协议 延时任务
         DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
+        // Meta- getDelayTaskExecuteEngine() -> 获取Distro延时任务执行引擎 DistroDelayTaskExecuteEngine
+        // Meta- 在DistroDelayTaskExecuteEngine初始化时 初始化任务
+        // Meta- wirk-@see NacosDelayTaskExecuteEngine(java.lang.String, int, org.slf4j.Logger, long)
+        // Meta- wirk-@see NacosDelayTaskExecuteEngine.ProcessRunnable.run()
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
         if (Loggers.DISTRO.isDebugEnabled()) {
             Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);

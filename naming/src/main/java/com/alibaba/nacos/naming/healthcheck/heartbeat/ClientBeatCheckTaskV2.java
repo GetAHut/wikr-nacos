@@ -64,10 +64,12 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     @Override
     public void doHealthCheck() {
         try {
+            // Meta- 心跳检查任务
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {
                 HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client
                         .getInstancePublishInfo(each);
+                // Meta- 根据心跳时间 设置是否健康
                 interceptorChain.doInterceptor(new InstanceBeatCheckTask(client, each, instance));
             }
         } catch (Exception e) {

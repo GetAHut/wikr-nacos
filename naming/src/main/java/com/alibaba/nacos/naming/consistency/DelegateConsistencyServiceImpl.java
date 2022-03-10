@@ -47,6 +47,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     
     @Override
     public void put(String key, Record value) throws NacosException {
+        // Meta- Record ---> Instance的父类（面向接口编程）
+        // Meta- ephemeralConsistencyService -> @see DistroConsistencyServiceImpl.put()
+        // Meta- AP架构核心注册逻辑
         mapConsistencyService(key).put(key, value);
     }
     

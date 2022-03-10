@@ -61,6 +61,7 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             Loggers.DISTRO.warn("[DISTRO] {} with null data to sync, skip", toString());
             return;
         }
+        // Meta- 同步数据 grpc
         getDistroComponentHolder().findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }

@@ -128,6 +128,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
             if (null != existTask) {
                 newTask.merge(existTask);
             }
+            // Meta- ConcurrentHashMap， 异步同步数据
             tasks.put(key, newTask);
         } finally {
             lock.unlock();
@@ -138,6 +139,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
      * process tasks in execute engine.
      */
     protected void processTasks() {
+        // Meta- 获取所有任务列表 keys
         Collection<Object> keys = getAllTaskKeys();
         for (Object taskKey : keys) {
             AbstractDelayTask task = removeTask(taskKey);
@@ -151,7 +153,10 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
             }
             try {
                 // ReAdd task if process failed
+                // Meta- 处理任务
+                // Meta- wikr-@see DistroDelayTaskProcessor.process
                 if (!processor.process(task)) {
+                    // Meta- 重试
                     retryFailedTask(taskKey, task);
                 }
             } catch (Throwable e) {
@@ -171,6 +176,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
         @Override
         public void run() {
             try {
+                // Meta- 处理Distro数据同步任务
                 processTasks();
             } catch (Throwable e) {
                 getEngineLog().error(e.toString(), e);

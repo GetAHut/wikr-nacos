@@ -84,7 +84,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private final GlobalConfig globalConfig;
     
     private final DistroProtocol distroProtocol;
-    
+
+    /** Meta- 处理Instance异步注册任务 */
     private volatile Notifier notifier = new Notifier();
     
     private Map<String, ConcurrentLinkedQueue<RecordListener>> listeners = new ConcurrentHashMap<>();
@@ -103,6 +104,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @PostConstruct
     public void init() {
+        // Meta- 通过Spring 初始化@PostConstruct调用， 启动线程池
+        // Meta- 调用Notifier.run() ->  tasks.take() -> 处理Instance注册逻辑
         GlobalExecutor.submitDistroNotifyTask(notifier);
     }
     
@@ -115,7 +118,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
             return;
         }
-        // Meta-
+        // Meta- 数据同步(向除自己之外的节点同步数据)
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
                 DistroConfig.getInstance().getSyncDelayMillis());
     }
@@ -139,6 +142,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
      */
     public void onPut(String key, Record value) {
 
+        // Meta- Record -> Instance
         // Meta- 判断是否是临时实例
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
             Datum<Instances> datum = new Datum<>();
@@ -422,6 +426,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     // Meta- 阻塞 从队列中获取任务 处理
                     Pair<String, DataOperation> pair = tasks.take();
                     // Meta- 处理
+                    // Meta- 将队列中的Instance信息 真正注册到内存注册表中
                     handle(pair);
                 } catch (Throwable e) {
                     Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
@@ -441,7 +446,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 if (!listeners.containsKey(datumKey)) {
                     return;
                 }
-                
+
+                // Meta- listener
+                // Meta- datumKey
+                System.out.println("wikr -> datumKey : " + datumKey);
                 for (RecordListener listener : listeners.get(datumKey)) {
                     
                     count++;
@@ -449,6 +457,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     try {
                         // Meta- listener 就是每一个服务实例
                         if (action == DataOperation.CHANGE) {
+                            // Meta- 处理Instance， 将其注册到注册表中 -> serviceMap
                             listener.onChange(datumKey, dataStore.get(datumKey).value);
                             continue;
                         }

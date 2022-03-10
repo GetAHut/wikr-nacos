@@ -55,6 +55,7 @@ public class InstanceBeatCheckTask implements Interceptable {
     @Override
     public void passIntercept() {
         for (InstanceBeatChecker each : CHECKERS) {
+            // Meta- 检查Instance健康状态
             each.doCheck(client, service, instancePublishInfo);
         }
     }

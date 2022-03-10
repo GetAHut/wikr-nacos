@@ -52,6 +52,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     
     private boolean isUnhealthy(Service service, HealthCheckInstancePublishInfo instance) {
         long beatTimeout = getTimeout(service, instance);
+        // Meta- 如果最后一次心跳检测超过15s 那么设置为不健康实例
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > beatTimeout;
     }
     
