@@ -23,6 +23,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Nacos starter.
+ * Meta- 主启动类
  *
  * @author nacos
  */
